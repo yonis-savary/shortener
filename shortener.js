@@ -25,6 +25,8 @@
         let observer = null;
         observer = new MutationObserver(() => {
             const returned = (callbackResolver)()
+            if (Array.isArray(returned) && !returned.length)
+                return;
             if (returned) {
                 observer.disconnect();
                 (resolve)(returned);
@@ -34,13 +36,11 @@
         observer.observe(document.body, {attributes: false, subtree: true, childList: true});
     })
 
-    const feedGrid = await waitAndResolve(() =>
-        document.querySelector('#primary #contents')
-    );
-
     const initializeEventListeners = async () => {
-        if (location.pathname !== '/')
+        if (location.pathname !== '/' && location.pathname !== '/feed/subscriptions')
             return;
+
+        const feedGrids = await waitAndResolve(() => Array.from(document.body.querySelectorAll('#primary #contents')));
 
         const hasDismissible = (element) => !!element.querySelector('#dismissible');
         const hideElement = (element) => element.style.setProperty('display', 'none', 'important');
@@ -49,13 +49,16 @@
             flattenMutationListNodes(mutationList).filter(hasDismissible).forEach(hideElement);
 
         const observer = new MutationObserver(hideShorts);
-        observer.observe(feedGrid, OBSERVER_CONFIG);
-        Array.from(feedGrid.childNodes).filter(hasDismissible).forEach(hideElement)
+        feedGrids.forEach(feedGrid => observer.observe(feedGrid, OBSERVER_CONFIG));
+
+        feedGrids.map(grid => Array.from(grid.childNodes)).flat().filter(hasDismissible).forEach(hideElement)
     }
 
     const intializeGridSizeChanger = async (configuredSize) => {
-        if (location.pathname !== '/')
+        if (location.pathname !== '/' && location.pathname !== '/feed/subscriptions')
             return;
+
+        const feedGrids = await waitAndResolve(() => Array.from(document.body.querySelectorAll('#primary #contents')));
 
         const changeElementSize = (element) => {
             if (element.querySelector('ytm-shorts-lockup-view-model'))
@@ -71,8 +74,11 @@
         }
 
         const observer = new MutationObserver(changeElementsSize);
-        observer.observe(feedGrid, OBSERVER_CONFIG);
-        Array.from(feedGrid.querySelectorAll('[items-per-row]')).forEach(changeElementSize);
+        feedGrids.forEach(feedGrid => observer.observe(feedGrid, OBSERVER_CONFIG));
+        feedGrids
+            .map(grid => Array.from(grid.querySelectorAll('[items-per-row]')))
+            .flat()
+            .forEach(changeElementSize)
     }
 
     // All features can be disabled at once
