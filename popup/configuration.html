@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="common.css">
+    <title>Configuration</title>
+</head>
+<body class="flex-col">
+    <div class="flex-col no-gap">
+        <h1>Shortener</h1>
+        <small>Content/Display tuning for Youtube</small>
+    </div>
+    <hr>
+    <label class="flex-row small-gap">
+        <input type="checkbox" storage-key="enabled">
+        <span>Enabled</span>
+    </label>
+    <hr>
+
+    <label class="flex-col small-gap">
+        <span>Feed: items-per-row (default: 3)</span>
+        <div class="flex-row small-gap">
+            <input type="range" min="3" max="6" storage-key="itemsPerRow">
+            <span id="itemsPerRowLabel"></span>
+        </div>
+    </label>
+
+    <label class="flex-row small-gap">
+        <input type="checkbox" storage-key="removeShortsFromFeedGrid">
+        <span>Remove 'Shorts' content from feed grid</span>
+    </label>
+
+    <label class="flex-row small-gap">
+        <input type="checkbox" storage-key="removeShortsFromSidebar">
+        <span>Remove 'Shorts' button on left side-bar</span>
+    </label>
+
+
+    <div class="refresh-disclaimer">
+        Warning : changes will be applied on page refresh
+    </div>
+
+    <script src="configuration.js"></script>
+</body>
+</html>
