@@ -1,4 +1,8 @@
 (async () => {
+    const HOME_SELECTOR = "[page-subtype='home'] #primary #contents";
+    const SUBSCRIPTION_SELECTOR = "[page-subtype='subscriptions'] #primary #contents";
+    const CHANNEL_SELECTOR = "[page-subtype='channels'] #primary #contents";
+
     const storage = new Proxy({}, {
         get(_, key) {
             return browser.storage.local
@@ -36,8 +40,10 @@
         observer.observe(document.body, {attributes: false, subtree: true, childList: true});
     })
 
-    const initializeEventListeners = async () => {
-        const feedGrids = await waitAndResolve(() => Array.from(document.body.querySelectorAll('#primary #contents')));
+    const getFeeds = (...selectors) => waitAndResolve(() => Array.from(document.body.querySelectorAll(selectors.join(','))))
+
+    const addDismissibleRemoverListeners = async () => {
+        const feedGrids = await getFeeds(HOME_SELECTOR, SUBSCRIPTION_SELECTOR);
 
         const hasDismissible = (element) => !!element.querySelector('#dismissible');
         const hideElement = (element) => element.style.setProperty('display', 'none', 'important');
@@ -51,9 +57,8 @@
         feedGrids.map(grid => Array.from(grid.childNodes)).flat().filter(hasDismissible).forEach(hideElement)
     }
 
-    const intializeGridSizeChanger = async (configuredSize) => {
-        const feedGrids = await waitAndResolve(() => Array.from(document.body.querySelectorAll('#primary #contents')));
-        console.log('GRID, FOUND '  +feedGrids.length + ' FEEDS');
+    const addItemsPerRowListeners = async (configuredSize) => {
+        const feedGrids = await getFeeds(HOME_SELECTOR, SUBSCRIPTION_SELECTOR, CHANNEL_SELECTOR);
 
         const changeElementSize = (element) => {
             if (element.querySelector('ytm-shorts-lockup-view-model'))
@@ -86,12 +91,12 @@
 
         // Removed suggested shorts from feed grid content
         if ((await storage['removeShortsFromFeedGrid']) ?? true)
-            initializeEventListeners()
+            addDismissibleRemoverListeners()
 
         // Items per row changed => turn on observer
         const itemsPerRow = (await storage['itemsPerRow']) ?? 3;
         if (itemsPerRow !== 3)
-            intializeGridSizeChanger(itemsPerRow);
+            addItemsPerRowListeners(itemsPerRow);
 
         // Sidebar short button removal
         if ((await storage['removeShortsFromSidebar']) ?? true) {
