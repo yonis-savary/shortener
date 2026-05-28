@@ -37,9 +37,6 @@
     })
 
     const initializeEventListeners = async () => {
-        if (location.pathname !== '/' && location.pathname !== '/feed/subscriptions')
-            return;
-
         const feedGrids = await waitAndResolve(() => Array.from(document.body.querySelectorAll('#primary #contents')));
 
         const hasDismissible = (element) => !!element.querySelector('#dismissible');
@@ -55,10 +52,8 @@
     }
 
     const intializeGridSizeChanger = async (configuredSize) => {
-        if (location.pathname !== '/' && location.pathname !== '/feed/subscriptions')
-            return;
-
         const feedGrids = await waitAndResolve(() => Array.from(document.body.querySelectorAll('#primary #contents')));
+        console.log('GRID, FOUND '  +feedGrids.length + ' FEEDS');
 
         const changeElementSize = (element) => {
             if (element.querySelector('ytm-shorts-lockup-view-model'))
@@ -81,26 +76,35 @@
             .forEach(changeElementSize)
     }
 
-    // All features can be disabled at once
-    if (!((await storage.enabled) ?? true))
-        return;
 
-    // Removed suggested shorts from feed grid content
-    if ((await storage['removeShortsFromFeedGrid']) ?? true)
-        initializeEventListeners()
+    const addExtensionListeners = async () => {
+        // All features can be disabled at once
+        if (!((await storage.enabled) ?? true))
+            return;
 
-    // Items per row changed => turn on observer
-    const itemsPerRow = (await storage['itemsPerRow']) ?? 3;
-    if (itemsPerRow !== 3)
-        intializeGridSizeChanger(itemsPerRow);
+        console.info('🔌 Shortener extension: intializing listeners');
 
-    // Sidebar short button removal
-    if ((await storage['removeShortsFromSidebar']) ?? true) {
-        waitAndResolve(() => document.querySelector(`ytd-mini-guide-entry-renderer:has(a[href*='shorts'])`))
-            .then(resolved => resolved.remove())
-        waitAndResolve(() => document.querySelector(`ytd-guide-entry-renderer:has(a[title*='Shorts'])`))
-            .then(resolved => resolved.remove())
+        // Removed suggested shorts from feed grid content
+        if ((await storage['removeShortsFromFeedGrid']) ?? true)
+            initializeEventListeners()
+
+        // Items per row changed => turn on observer
+        const itemsPerRow = (await storage['itemsPerRow']) ?? 3;
+        if (itemsPerRow !== 3)
+            intializeGridSizeChanger(itemsPerRow);
+
+        // Sidebar short button removal
+        if ((await storage['removeShortsFromSidebar']) ?? true) {
+            waitAndResolve(() => document.querySelector(`ytd-mini-guide-entry-renderer:has(a[href*='shorts'])`))
+                .then(resolved => resolved.remove())
+            waitAndResolve(() => document.querySelector(`ytd-guide-entry-renderer:has(a[title*='Shorts'])`))
+                .then(resolved => resolved.remove())
+        }
     }
+
+    // Reload listeners on page init/change
+    // (Thanks ChatGPT for the event name)
+    window.addEventListener('yt-navigate-finish', addExtensionListeners)
 })();
 
 
